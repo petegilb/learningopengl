@@ -1,0 +1,61 @@
+cmake_minimum_required(VERSION 4.1)
+project(learningopengl)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# --- Compiler Optimizations ---
+if(MSVC)
+    # This sets the Runtime Library (Static vs Dynamic)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>")
+    add_compile_options(/arch:AVX2)
+endif()
+
+# --- Dependencies (GLFW) ---
+include(FetchContent)
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.4
+)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glfw)
+
+# --- Paths ---
+set(GLAD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glad")
+set(SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+# --- Find System OpenGL ---
+# This finds libGL.so on Linux and opengl32.lib on Windows automatically.
+find_package(OpenGL REQUIRED)
+
+# --- Target Definition (The Core) ---
+# Define the executable ONCE with all its source files
+add_executable(${PROJECT_NAME}
+        "${SRC_PATH}/main.cpp"
+        "${GLAD_PATH}/src/glad.c"
+)
+
+# --- Include Directories ---
+target_include_directories(${PROJECT_NAME} PRIVATE
+        "${GLAD_PATH}/include"
+        "${SRC_PATH}"
+)
+
+# --- Linking (The "Why") ---
+# 1. glfw: The windowing library we fetched
+# 2. opengl32: The Windows system driver for OpenGL
+target_link_libraries(${PROJECT_NAME} glfw OpenGL::GL)
+
+# System-specific tweaks
+if (APPLE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE "-framework IOKit" "-framework Cocoa")
+elseif (UNIX AND NOT APPLE)
+    # Linux specifically needs the threading and dynamic loading libraries
+    target_link_libraries(${PROJECT_NAME} PRIVATE pthread dl)
+endif()
+
+# --- Project Properties ---
+set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
+set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>)
