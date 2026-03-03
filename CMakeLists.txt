@@ -59,3 +59,15 @@ endif()
 # --- Project Properties ---
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+
+# --- Shaders ---
+set(SHADER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
+set(SHADER_DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders")
+
+add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${SHADER_SOURCE_DIR}"
+        "${SHADER_DEST_DIR}"
+        COMMENT "Copying shaders to output directory"
+)

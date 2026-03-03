@@ -1,24 +1,12 @@
-﻿#include <memory>
+﻿#include <fstream>
+#include <memory>
 #include <iostream>
+#include <sstream>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 // REFERENCING: https://learnopengl.com
-
-const char *vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
-
-const char *fragmentShaderSource = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\0";
 
 float vertices[] = {
     0.5f,  0.5f, 0.0f,  // top right
@@ -55,6 +43,17 @@ void processInput(GLFWwindow *window)
         }
         bWireframe = !bWireframe;
     }
+}
+
+std::string loadShader(const char* filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open shader file: " << filepath << std::endl;
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
 }
 
 int main(){
@@ -95,6 +94,9 @@ int main(){
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // shader stuff
+    std::string vertexCode = loadShader("shaders/learning.vert");
+    const char* vertexShaderSource = vertexCode.c_str();
+
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
@@ -109,6 +111,9 @@ int main(){
             return -1;
         }
     }
+
+    std::string fragmentCode = loadShader("shaders/learning.frag");
+    const char* fragmentShaderSource = fragmentCode.c_str();
 
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
