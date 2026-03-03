@@ -1,4 +1,5 @@
-﻿#include <fstream>
+﻿#include <cmath>
+#include <fstream>
 #include <memory>
 #include <iostream>
 #include <sstream>
@@ -12,12 +13,16 @@ float vertices[] = {
     0.5f,  0.5f, 0.0f,  // top right
     0.5f, -0.5f, 0.0f,  // bottom right
    -0.5f, -0.5f, 0.0f,  // bottom left
-   -0.5f,  0.5f, 0.0f   // top left
+   -0.5f,  0.5f, 0.0f,  // top left
+    0.0f,  0.5f, 0.0f   // top
 };
-unsigned int indices[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
+unsigned int indices[] = {
+    1, 2, 4
 };
+// unsigned int indices[] = {  // note that we start from 0!
+//     0, 1, 3,   // first triangle
+//     1, 2, 3    // second triangle
+// };
 
 bool bWireframe = false;
 
@@ -181,7 +186,17 @@ int main(){
         glClear(GL_COLOR_BUFFER_BIT);
 
         // draw!
+
+        // be sure to activate the shader
         glUseProgram(shaderProgram);
+
+        // alter green color when window is open here
+        float timeValue = glfwGetTime();
+        float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+        // render shape
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
