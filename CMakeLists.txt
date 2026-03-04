@@ -35,6 +35,7 @@ find_package(OpenGL REQUIRED)
 add_executable(${PROJECT_NAME}
         "${SRC_PATH}/main.cpp"
         "${GLAD_PATH}/src/glad.c"
+        "${SRC_PATH}/shader.h"
 )
 
 # --- Include Directories ---

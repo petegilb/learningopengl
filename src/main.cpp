@@ -7,6 +7,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "shader.h"
+
 // REFERENCING: https://learnopengl.com
 
 float vertices[] = {
@@ -99,57 +101,7 @@ int main(){
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // shader stuff
-    std::string vertexCode = loadShader("shaders/learning.vert");
-    const char* vertexShaderSource = vertexCode.c_str();
-
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    {
-        int  success;
-        char infoLog[512];
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-        if(!success)
-        {
-            glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-            return -1;
-        }
-    }
-
-    std::string fragmentCode = loadShader("shaders/learning.frag");
-    const char* fragmentShaderSource = fragmentCode.c_str();
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    {
-        int  success;
-        char infoLog[512];
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-        if(!success)
-        {
-            glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-            return -1;
-        }
-    }
-
-    // create the shader program and link the two shaders we just made
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    int  success;
-    char infoLog[512];
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if(!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINK_FAILED\n" << infoLog << std::endl;
-        return -1;
-    }
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    Shader ourShader("shaders/learning.vert", "shaders/learning.frag");
 
     // set up VBO and VAO and EBO
     unsigned int VBO;
@@ -196,13 +148,12 @@ int main(){
         // draw!
 
         // be sure to activate the shader
-        glUseProgram(shaderProgram);
+        ourShader.use();
 
         // alter green color when window is open here
         float timeValue = glfwGetTime();
         float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
-        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+        ourShader.setFloat4("testColor", 0.0f, greenValue, 0.0f, 1.0f);
 
         // render shape
         glBindVertexArray(VAO);
@@ -213,6 +164,11 @@ int main(){
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
+
+    // optional: de-allocate all resources once they've outlived their purpose:
+    // ------------------------------------------------------------------------
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
 
     // clean up all resources
     glfwTerminate();
