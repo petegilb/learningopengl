@@ -23,7 +23,8 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
 # --- Paths ---
-set(GLAD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glad")
+set(EXTERNAL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external")
+set(GLAD_PATH "${EXTERNAL_PATH}/glad")
 set(SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 # --- Find System OpenGL ---
@@ -36,12 +37,14 @@ add_executable(${PROJECT_NAME}
         "${SRC_PATH}/main.cpp"
         "${GLAD_PATH}/src/glad.c"
         "${SRC_PATH}/shader.h"
+        "${EXTERNAL_PATH}/stb_image.h"
 )
 
 # --- Include Directories ---
 target_include_directories(${PROJECT_NAME} PRIVATE
         "${GLAD_PATH}/include"
         "${SRC_PATH}"
+        "${EXTERNAL_PATH}"
 )
 
 # --- Linking (The "Why") ---
@@ -71,4 +74,16 @@ add_custom_command(
         "${SHADER_SOURCE_DIR}"
         "${SHADER_DEST_DIR}"
         COMMENT "Copying shaders to output directory"
+)
+
+# --- Resources ---
+set(RESOURCE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+set(RESOURCE_DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources")
+
+add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${RESOURCE_SOURCE_DIR}"
+        "${RESOURCE_DEST_DIR}"
+        COMMENT "Copying resources to output directory"
 )
