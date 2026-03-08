@@ -22,6 +22,14 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
+FetchContent_Declare(
+        glm
+        GIT_REPOSITORY	https://github.com/g-truc/glm.git
+        GIT_TAG 	0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
+)
+
+FetchContent_MakeAvailable(glm)
+
 # --- Paths ---
 set(EXTERNAL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external")
 set(GLAD_PATH "${EXTERNAL_PATH}/glad")
@@ -50,7 +58,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # --- Linking (The "Why") ---
 # 1. glfw: The windowing library we fetched
 # 2. opengl32: The Windows system driver for OpenGL
-target_link_libraries(${PROJECT_NAME} glfw OpenGL::GL)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+        glfw
+        OpenGL::GL
+        glm::glm
+)
 
 # System-specific tweaks
 if (APPLE)
