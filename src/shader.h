@@ -37,6 +37,7 @@ public:
             // convert stream into string
             vertexCode   = vShaderStream.str();
             fragmentCode = fShaderStream.str();
+            std::cout << "Vertex shader first 50 chars: " << vertexCode.substr(0, 50) << std::endl;
         }
         catch (std::ifstream::failure& e)
         {

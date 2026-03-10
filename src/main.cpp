@@ -3,6 +3,7 @@
 #include <memory>
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -69,7 +70,7 @@ std::string loadShader(const char* filepath) {
     return buffer.str();
 }
 
-int main(){
+int main(int argc, char* argv[]){
     std::cout << "Starting up opengl learning app!" << std::endl;
 
     // Initialize glfw and configure it with our opengl version that we chose (in this case 3.3)
@@ -121,13 +122,15 @@ int main(){
     stbi_set_flip_vertically_on_load(true);
 
     int width, height, nrChannels;
-    unsigned char *data = stbi_load("resources/monkey.jpg", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("assets/monkey.jpg", &width, &height, &nrChannels, 0);
     if (data){
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else{
+        std::cout << "stbi reason: " << stbi_failure_reason() << std::endl;
         std::cout << "Failed to load texture" << std::endl;
+        return 1;
     }
     stbi_image_free(data);
 
@@ -140,7 +143,7 @@ int main(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    data = stbi_load("resources/eclipse.jpg", &width, &height, &nrChannels, 0);
+    data = stbi_load("assets/eclipse.jpg", &width, &height, &nrChannels, 0);
     if (data){
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -151,6 +154,7 @@ int main(){
     stbi_image_free(data);
 
     // shader stuff
+    std::cout << "CWD before shader: " << std::filesystem::current_path() << std::endl;
     Shader ourShader("shaders/learning.vert", "shaders/learning.frag");
 
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
@@ -240,12 +244,12 @@ int main(){
         glfwSwapBuffers(window);
     }
 
-    // optional: de-allocate all resources once they've outlived their purpose:
+    // optional: de-allocate all assets once they've outlived their purpose:
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 
-    // clean up all resources
+    // clean up all assets
     glfwTerminate();
     return 0;
 }

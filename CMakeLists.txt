@@ -88,14 +88,14 @@ add_custom_command(
         COMMENT "Copying shaders to output directory"
 )
 
-# --- Resources ---
-set(RESOURCE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
-set(RESOURCE_DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources")
+# --- Assets ---
+set(ASSET_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+set(ASSET_DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets")
 
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${RESOURCE_SOURCE_DIR}"
-        "${RESOURCE_DEST_DIR}"
-        COMMENT "Copying resources to output directory"
+        "${ASSET_SOURCE_DIR}"
+        "${ASSET_DEST_DIR}"
+        COMMENT "Copying assets to output directory"
 )
