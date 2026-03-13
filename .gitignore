@@ -82,3 +82,4 @@ android.*
 cmake-build-debug
 .idea
 build
+.DS_Store
