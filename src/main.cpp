@@ -132,6 +132,9 @@ std::string loadShader(const char* filepath) {
 int main(int argc, char* argv[]){
     std::cout << "Starting up opengl learning app!" << std::endl;
 
+    // https://stackoverflow.com/questions/55307896
+    bool hasWindowBeenFixed=false;
+
     // Initialize glfw and configure it with our opengl version that we chose (in this case 3.3)
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -275,7 +278,15 @@ int main(int argc, char* argv[]){
         auto model = glm::mat4(1.0f);
         glm::mat4 view = glm::mat4(1.0f);
         // note that we're translating the scene in the reverse direction of where we want to move
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        const float radius = 10.0f;
+        float camX = sin(glfwGetTime()) * radius;
+        float camZ = cos(glfwGetTime()) * radius;
+        view = glm::lookAt(
+            glm::vec3(camX, 0.0, camZ),
+            glm::vec3(0.0, 0.0, 0.0),
+            glm::vec3(0.0, 1.0, 0.0)
+        );
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
@@ -313,6 +324,13 @@ int main(int argc, char* argv[]){
         // check and call events and swap the buffers
         glfwPollEvents();
         glfwSwapBuffers(window);
+
+        // fix window scaling bug (only on mac)
+        // https://stackoverflow.com/questions/55307896
+        if(!hasWindowBeenFixed){
+            hasWindowBeenFixed=true;
+            glfwSetWindowPos(window,50,50);
+        }
     }
 
     // optional: de-allocate all assets once they've outlived their purpose:
