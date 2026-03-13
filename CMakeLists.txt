@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
         "${SRC_PATH}/main.cpp"
         "${GLAD_PATH}/src/glad.c"
         "${SRC_PATH}/shader.h"
+        "${SRC_PATH}/camera.h"
         "${EXTERNAL_PATH}/stb_image.h"
 )
 

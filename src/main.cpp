@@ -12,6 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include "camera.h"
 #include "stb_image.h"
 
 #include "shader.h"
@@ -94,23 +95,17 @@ glm::vec3 cubePositions[] = {
 
 
 // globals
-int windowWidth = 800;
-int windowHeight = 600;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 bool bWireframe = false;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
 // Camera vars:
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
-float lastX = static_cast<float>(windowWidth)/2;
-float lastY = static_cast<float>(windowHeight)/2;
-float pitch = 0.f;
-float yaw = -90.0f;
-float roll = 0.f;
-float fov = 45.0f;
-bool firstMouse = false;
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
 
 // when the user resizes the window, the opengl viewport should also be resized
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -136,19 +131,18 @@ void processInput(GLFWwindow *window)
     }
 
     // camera controls
-    float cameraSpeed = 5.0f * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
+        camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        camera.ProcessKeyboard(RIGHT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        cameraPos -= cameraUp * cameraSpeed;
+        camera.ProcessKeyboard(DOWN, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        cameraPos += cameraUp * cameraSpeed;
+        camera.ProcessKeyboard(UP, deltaTime);
 }
 
 std::string loadShader(const char* filepath) {
@@ -162,7 +156,10 @@ std::string loadShader(const char* filepath) {
     return buffer.str();
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
     if (firstMouse)
     {
         lastX = xpos;
@@ -171,36 +168,17 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     }
 
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
     lastX = xpos;
     lastY = ypos;
 
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    yaw   += xoffset;
-    pitch += yoffset;
-
-    if(pitch > 89.0f)
-        pitch = 89.0f;
-    if(pitch < -89.0f)
-        pitch = -89.0f;
-
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);
+    camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    fov -= (float)yoffset;
-    if (fov < 1.0f)
-        fov = 1.0f;
-    if (fov > 45.0f)
-        fov = 45.0f;
+    camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
 int main(int argc, char* argv[]){
@@ -238,7 +216,7 @@ int main(int argc, char* argv[]){
     }
 
     // tell opengl the size of the viewport
-    glViewport(0, 0, windowWidth, windowHeight);
+    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
     // set callback for window resizing
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -362,11 +340,11 @@ int main(int argc, char* argv[]){
 
         // note that we're translating the scene in the reverse direction of where we want to move
         glm::mat4 view;
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        view = camera.GetViewMatrix();
 
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(fov),
-            static_cast<float>(windowWidth) / static_cast<float>(windowHeight),
+        projection = glm::perspective(glm::radians(camera.Zoom),
+            static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
             0.1f, 100.0f);
 
         // set uniforms for shaders
