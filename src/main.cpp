@@ -92,7 +92,25 @@ glm::vec3 cubePositions[] = {
     glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 
+
+// globals
+int windowWidth = 800;
+int windowHeight = 600;
 bool bWireframe = false;
+float deltaTime = 0.0f;	// Time between current frame and last frame
+float lastFrame = 0.0f; // Time of last frame
+
+// Camera vars:
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+float lastX = static_cast<float>(windowWidth)/2;
+float lastY = static_cast<float>(windowHeight)/2;
+float pitch = 0.f;
+float yaw = -90.0f;
+float roll = 0.f;
+float fov = 45.0f;
+bool firstMouse = false;
 
 // when the user resizes the window, the opengl viewport should also be resized
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -116,6 +134,21 @@ void processInput(GLFWwindow *window)
         }
         bWireframe = !bWireframe;
     }
+
+    // camera controls
+    float cameraSpeed = 5.0f * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        cameraPos -= cameraUp * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        cameraPos += cameraUp * cameraSpeed;
 }
 
 std::string loadShader(const char* filepath) {
@@ -127,6 +160,47 @@ std::string loadShader(const char* filepath) {
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw   += xoffset;
+    pitch += yoffset;
+
+    if(pitch > 89.0f)
+        pitch = 89.0f;
+    if(pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    fov -= (float)yoffset;
+    if (fov < 1.0f)
+        fov = 1.0f;
+    if (fov > 45.0f)
+        fov = 45.0f;
 }
 
 int main(int argc, char* argv[]){
@@ -164,7 +238,7 @@ int main(int argc, char* argv[]){
     }
 
     // tell opengl the size of the viewport
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, windowWidth, windowHeight);
 
     // set callback for window resizing
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -258,10 +332,19 @@ int main(int argc, char* argv[]){
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glEnable(GL_DEPTH_TEST);
 
+    // set up window for capturing mouse
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+
     // simple render loop
     // we are swapping buffers because we are using a double buffer to prevent flickering issues/artifacts when the buffer is drawn to
     while(!glfwWindowShouldClose(window))
     {
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         // input
         processInput(window);
 
@@ -276,19 +359,15 @@ int main(int argc, char* argv[]){
 
         // coordinate system changes
         auto model = glm::mat4(1.0f);
-        glm::mat4 view = glm::mat4(1.0f);
+
         // note that we're translating the scene in the reverse direction of where we want to move
-        // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        const float radius = 10.0f;
-        float camX = sin(glfwGetTime()) * radius;
-        float camZ = cos(glfwGetTime()) * radius;
-        view = glm::lookAt(
-            glm::vec3(camX, 0.0, camZ),
-            glm::vec3(0.0, 0.0, 0.0),
-            glm::vec3(0.0, 1.0, 0.0)
-        );
+        glm::mat4 view;
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+        projection = glm::perspective(glm::radians(fov),
+            static_cast<float>(windowWidth) / static_cast<float>(windowHeight),
+            0.1f, 100.0f);
 
         // set uniforms for shaders
         int modelLoc = glGetUniformLocation(ourShader.ID, "model");
