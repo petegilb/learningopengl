@@ -43,6 +43,8 @@ public:
         {
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
         }
+        stripBOM(vertexCode);
+        stripBOM(fragmentCode);
         const char* vShaderCode = vertexCode.c_str();
         const char * fShaderCode = fragmentCode.c_str();
         // 2. compile shaders
@@ -133,6 +135,18 @@ public:
     }
 
 private:
+    // Strip UTF-8 BOM (EF BB BF) if present
+    // ------------------------------------------------------------------------
+    static void stripBOM(std::string& src)
+    {
+        if (src.size() >= 3 &&
+            (unsigned char)src[0] == 0xEF &&
+            (unsigned char)src[1] == 0xBB &&
+            (unsigned char)src[2] == 0xBF)
+        {
+            src.erase(0, 3);
+        }
+    }
     // utility function for checking shader compilation/linking errors.
     // ------------------------------------------------------------------------
     void checkCompileErrors(unsigned int shader, std::string type)
